@@ -30,7 +30,7 @@ function HeaderWithSteps ({ className, step, text }: Props): React.ReactElement<
       <div className='steps'>
         <div>
           <span className='current'>{step}</span>
-          <span className='total'>/2</span>
+          <span className='total'>/4</span>
         </div>
         <ActionText
           onClick={_onCancel}

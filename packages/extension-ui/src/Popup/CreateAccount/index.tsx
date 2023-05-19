@@ -8,11 +8,14 @@ import { ActionContext, Address, Dropdown, Loading } from '../../components/inde
 import useGenesisHashOptions from '../../hooks/useGenesisHashOptions.js';
 import useMetadata from '../../hooks/useMetadata.js';
 import useTranslation from '../../hooks/useTranslation.js';
-import { createAccountSuri, createSeed, validateSeed } from '../../messaging.js';
+import { createAccountSuri, validateSeed } from '../../messaging.js';
 import { HeaderWithSteps } from '../../partials/index.js';
 import { styled } from '../../styled.js';
 import { DEFAULT_TYPE } from '../../util/defaultType.js';
-import Mnemonic from './Mnemonic.js';
+import useStepper from '../hooks/useStepper.js';
+import GenerateWallet from './GenerateAccount.js';
+
+const xxnetworkGenesisHash = '0x50dd5d206917bf10502c68fb4d18a59fc8aa31586f4e8856b493e43544aa82aa';
 
 interface Props {
   className?: string;
@@ -22,24 +25,14 @@ function CreateAccount ({ className }: Props): React.ReactElement {
   const { t } = useTranslation();
   const onAction = useContext(ActionContext);
   const [isBusy, setIsBusy] = useState(false);
-  const [step, setStep] = useState(1);
   const [address, setAddress] = useState<null | string>(null);
   const [seed, setSeed] = useState<null | string>(null);
   const [type, setType] = useState(DEFAULT_TYPE);
   const [name, setName] = useState('');
   const options = useGenesisHashOptions();
-  const [genesisHash, setGenesis] = useState('');
+  const [genesisHash, setGenesis] = useState(xxnetworkGenesisHash);
   const chain = useMetadata(genesisHash, true);
-
-  useEffect((): void => {
-    createSeed(undefined)
-      .then(({ address, seed }): void => {
-        setAddress(address);
-        setSeed(seed);
-      })
-      .catch(console.error);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const [step, nextStep, prevStep, setStep] = useStepper();
 
   useEffect((): void => {
     if (seed) {
@@ -71,16 +64,6 @@ function CreateAccount ({ className }: Props): React.ReactElement {
     [genesisHash, onAction, seed, type]
   );
 
-  const _onNextStep = useCallback(
-    () => setStep((step) => step + 1),
-    []
-  );
-
-  const _onPreviousStep = useCallback(
-    () => setStep((step) => step - 1),
-    []
-  );
-
   const _onChangeNetwork = useCallback(
     (newGenesisHash: string) => setGenesis(newGenesisHash),
     []
@@ -92,41 +75,39 @@ function CreateAccount ({ className }: Props): React.ReactElement {
         step={step}
         text={t<string>('Create an account')}
       />
+      <GenerateWallet
+        nextStep={nextStep}
+        setSeed={setSeed}
+        setStep={setStep}
+        step={step}
+      />
       <Loading>
-        <div>
+        <div style={{ marginTop: '1em' }}>
           <Address
             address={address}
             genesisHash={genesisHash}
             name={name}
           />
         </div>
-        {seed && (
-          step === 1
-            ? (
-              <Mnemonic
-                onNextStep={_onNextStep}
-                seed={seed}
-              />
-            )
-            : (
-              <>
-                <Dropdown
-                  className={className}
-                  label={t<string>('Network')}
-                  onChange={_onChangeNetwork}
-                  options={options}
-                  value={genesisHash}
-                />
-                <AccountNamePasswordCreation
-                  buttonLabel={t<string>('Add the account with the generated seed')}
-                  isBusy={isBusy}
-                  onBackClick={_onPreviousStep}
-                  onCreate={_onCreate}
-                  onNameChange={setName}
-                />
-              </>
-            )
-        )}
+        {seed && step > 3 && (
+          <>
+            <Dropdown
+              className={className}
+              label={t<string>('Network')}
+              onChange={_onChangeNetwork}
+              options={options}
+              value={genesisHash}
+            />
+            <AccountNamePasswordCreation
+              buttonLabel={t<string>('Add the account with the generated seed')}
+              isBusy={isBusy}
+              onBackClick={prevStep}
+              onCreate={_onCreate}
+              onNameChange={setName}
+            />
+          </>
+        )
+        }
       </Loading>
     </>
   );

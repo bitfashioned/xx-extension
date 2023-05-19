@@ -20,5 +20,16 @@ module.exports = {
     ...base.rules,
     // this seems very broken atm, false positives
     '@typescript-eslint/unbound-method': 'off'
-  }
+  },
+  overrides: [
+    {
+      files: ['**/**.tsx', '**/**.ts'],
+      rules: {
+        'header/header': ['off'],
+      },
+      extends: [
+        "eslint:recommended",
+      ],
+    }
+  ],
 };
